@@ -44,7 +44,7 @@ curr_date_str <- gsub('-','_', curr_date)
 curr_time_base <- Sys.time() #- 1
 curr_time <- Sys.time() #- 1
 curr_time_str <- gsub(' ','-', gsub('-|:','_', curr_time))
-fname_nyt <- paste('data/corona_nyt', curr_time_str, sep='-')
+fname_nyt <- paste0(paste('data/corona_nyt', curr_time_str, sep='-'), '.csv')
 fname_nyt
 
 # https://github.com/nytimes/covid-19-data
@@ -940,7 +940,7 @@ curr_time <- Sys.time() #- 1
 curr_time_str <- gsub('-|:','_', curr_time)
 curr_time_str <- gsub(' ','-', curr_time_str)
 
-fname_jhu <- paste('data/corona_jhu', curr_time_str, sep='-')
+fname_jhu <- paste0(paste('data/corona_jhu', curr_time_str, sep='-'), '.csv')
 fname_jhu
 
 if(!file.exists(fname_jhu)) {
