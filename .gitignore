@@ -3,3 +3,7 @@
 
 #csvs
 .csv
+
+# folders for data and images
+images/
+data/

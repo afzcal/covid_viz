@@ -35,7 +35,7 @@ PNG_RES <- 600
 d_major_break <- "10 day"
 d_minor_break <- "2 day"
 x_ax_sz <- 6
-exp_lab_shift <- 10
+exp_lab_shift <- 20
 x_major_spacing <- 10
 x_minor_spacing <- 2
 
@@ -328,7 +328,6 @@ if(SAVE_PLOTS) dev.off()
 # -------------------------------------------------------------------------
 # States Cases ------------------------------------------------------------
 # -------------------------------------------------------------------------
-
 us_df <- nyt_df %>%
   group_by(date) %>%
   summarise(cases= sum(cases), deaths=sum(deaths)) 
@@ -441,11 +440,10 @@ ggplot(bg_states_df, aes(x=days_since_10, y=cases)) +
                slice(n()) %>%
                ungroup, 
              aes(colour=state), pch = 21, size = 1.25) +
-  
   geom_label_repel(data = emph_states_df %>% group_by(state)
                    %>% top_n(1, days_since_10),
                    aes(label = paste0("",state), colour=state),
-                   xlim=x_repel_lim, size=2.75, 
+                   xlim=x_repel_lim, size=2, 
                    segment.colour = 'black', segment.alpha = .5,
                    label.padding = 0.15) +
   # Formatting
@@ -501,9 +499,10 @@ y_max <- max(filtered_deaths_df$deaths)
 y_death_breaks <- c(as.vector(c(1, 2, 5) %o% 10^(0:6)))
 exp_last <- which.max(y_death_breaks[y_death_breaks <= y_max]) + 1
 y_death_breaks <- y_death_breaks[1:exp_last]
+y_limits <- c(1, y_max*1.3)
 
 x_death_max <- max(filtered_cases_df$days_since_10)
-x_max_pad <- 10
+x_max_pad <- 15
 x_death_breaks <- seq(0, x_death_max+x_max_pad, x_major_spacing)
 x_death_minor <-seq(0, x_death_max+x_max_pad, x_minor_spacing)
 x_limits <- c(0, x_death_max+x_max_pad)
@@ -527,7 +526,8 @@ ggplot(filtered_deaths_df, aes(x=days_since_1, y=deaths, color=state)) +
   # formatting
   scale_y_log10(expand = expansion(add = c(0, 0.1)), 
                 minor_breaks=log10_minor_break(), 
-                breaks = y_death_breaks, labels = y_death_breaks) +
+                breaks = y_death_breaks, labels = y_death_breaks,
+                limits = y_limits) +
   scale_x_continuous(expand = expansion(add = c(0, 1)),
                      breaks=x_death_breaks, minor_breaks = x_death_minor,
                      limits=x_limits) +
@@ -595,7 +595,8 @@ ggplot(bg_death_states_df, aes(x=days_since_1, y=deaths)) +
   # Formatting
   scale_y_log10(expand = expansion(add = c(0, 0.1)),
                 minor_breaks=log10_minor_break(), 
-                breaks = y_death_breaks, labels = y_death_breaks) +
+                breaks = y_death_breaks, labels = y_death_breaks,
+                limits = y_limits) +
   scale_x_continuous(expand = expansion(add = c(0, 1)),
                      breaks=x_death_breaks, minor_breaks = x_death_minor,
                      limits=x_limits) +
@@ -830,8 +831,10 @@ y_breaks <- y_breaks[1:exp_last]
 y_limits <- c(p1_pc, y_max*1.1)
 
 x_max <- max(deaths_pop_filtered_df$days_since_p1_pc)
-x_breaks <- seq(0, x_max+1, x_major_spacing)
-x_minor <-seq(0, x_max+1, x_minor_spacing)
+x_max_pad <- x_max + 14
+x_breaks <- seq(0, x_max_pad, x_major_spacing)
+x_minor <-seq(0, x_max_pad, x_minor_spacing)
+x_limits <- c(0, x_max_pad)
 
 tt_txt <- paste0(c('Reported Deaths Per ', death_sc_comma, ' People by State [Log Scale] - ', 
                 as.character(curr_date)), collapse = '') 
@@ -855,7 +858,8 @@ ggplot(deaths_pop_filtered_df,
                 breaks = y_breaks, labels = y_breaks,
                 limits=y_limits) +
   scale_x_continuous(expand = expansion(add = c(0, 1)),
-                     breaks=x_breaks, minor_breaks = x_minor) +
+                     breaks=x_breaks, minor_breaks = x_minor,
+                     limits=x_limits) +
   coord_cartesian(clip = "off") +
   theme(axis.text.x=element_text(angle=0, hjust=1, size=x_ax_sz))  +
   theme(# panel.grid.minor = element_blank(),
@@ -865,7 +869,7 @@ ggplot(deaths_pop_filtered_df,
 if(SAVE_PLOTS) dev.off()
 
 # Emphasis Plot -----------------------------------------------------------
-emph_thresh <- 10
+emph_thresh <- 15
 bg_states <- state_max %>% 
   filter((max >= p1_pc) & (max < emph_thresh)) %>%
   select(state)
@@ -916,7 +920,8 @@ ggplot(bg_states_df, aes(x=days_since_p1_pc, y=deaths_per_10k_people)) +
                 breaks = y_breaks, labels = y_breaks,
                 limits=y_limits) +
   scale_x_continuous(expand = expansion(add = c(0, 1)),
-                     breaks=x_breaks, minor_breaks = x_minor) +
+                     breaks=x_breaks, minor_breaks = x_minor,
+                     limits=x_limits) +
   coord_cartesian(clip = "off") +
   theme_minimal() +
   theme(axis.text.x=element_text(angle=0, hjust=1, size=x_ax_sz))  +
@@ -991,7 +996,7 @@ y_max <- max(filtered_ny_df$cases)
 y_break_max <- 10^(ceiling(log10(y_max)))
 y_break_max_power <- log10(y_break_max)
 y_breaks <- c(as.vector(c(1, 2, 5) %o% 10^(0:y_break_max_power)))
-y_limits = c(1, y_max * 1.3)
+y_limits = c(1, y_max * 1.5)
 
 plot_title <-  paste("Cumulative Number of Cases by NY County [Log Scale]",
                      curr_date, sep= ' - ')
@@ -1004,12 +1009,6 @@ if(SAVE_PLOTS) {
 }
 ggplot(filtered_ny_df, aes(x=date, y=cases, color=Admin2)) +
   geom_line(size = 0.8) +
-  # geom_shadowtext(aes(label = paste0(" ", Admin2)),
-  #                 hjust=0, vjust = 0, angle = -15,
-  #                 data = . %>% group_by(Admin2)
-  #                          %>% top_n(1, date),
-  # bg.color = "white", size=2.2) +
-  # geom_text_repel(data = . %>% group_by(Admin2)
   geom_label_repel(data = . %>% group_by(Admin2)
                    %>% top_n(1, date),
                    aes(label = paste0("", Admin2), colour=Admin2),
@@ -1220,271 +1219,246 @@ max_new_ny_df %>%
   labs(fill = "Number of Cases", x = "", y = "", subtitle = plot_title)
 if(SAVE_PLOTS) dev.off()
 
-
-
-# California County -------------------------------------------------------
-ca_county_df <- jhu_df %>% 
-  filter(Admin2 != '',
-         Province_State == 'California',
-         !(Admin2 %in% c('Out of CA', 'Unassigned')))
-
-# https://www.google.com/search?q=how+many+ca+counties
-dim(ca_county_df)
-# ca_county_df$Admin2
-# head(ca_county_df)
-# colnames(ca_county_df)
-
-# df_ids <- c("UID", "iso2", "iso3", "code3", "FIPS", "Admin2", "Province_State", 
-# "Country_Region", "Lat", "Long_", "Combined_Key" )
-new_ca_df <- melt(ca_county_df, id=df_ids)
-new_ca_df <- new_ca_df %>% 
-  rename(date = variable,
-         cases = value)
-new_ca_df$date <- as.Date(gsub('X', '', new_ca_df$date), format = "%m.%d.%y")
-# head(new_ny_df)
-filtered_ca_df <- new_ca_df %>%
-  filter(
-    # cases > 0
-    date >= '2020-03-01'
-  )
-
-# All CA Counties Plot -----------------------------------------------------------
-# x_minor <-seq(0, x_max_pad+1, x_minor_spacing)
-# x_ax_sz <- 6
-x_max <- max(filtered_ca_df$date)
-x_min <- min(filtered_ca_df$date)
-x_max_pad <- x_max + 70
-
-y_max <- max(filtered_ca_df$cases)
-y_break_max <- 10^(ceiling(log10(y_max)))
-y_break_max_power <- log10(y_break_max)
-y_breaks <- c(as.vector(c(1, 2, 5) %o% 10^(0:y_break_max_power)))
-y_limits = c(1, y_max * 1.4)
-
-plot_title <-  paste("Cumulative Number of Cases by CA County [Log Scale]",
-                     curr_date, sep= ' - ')
-time_str <- gsub(':', '_', gsub(' ', '+', Sys.time()))
-ca_counties_fname <- paste0(c(time_str,'_corona_CA_Counties_Cases',  '.png'), collapse = '')
-
-if(SAVE_PLOTS) {
-  png(paste0('images/', ca_counties_fname),
-      width=7, height=5, units='in', res=PNG_RES)
-}
-ggplot(filtered_ca_df, aes(x=date, y=cases, color=Admin2)) +
-  geom_line(size = 0.8) +
-  # geom_shadowtext(aes(label = paste0(" ", Admin2)),
-  #                 hjust=0, vjust = 0, angle = -15,
-  #                 data = . %>% group_by(Admin2)
-  #                          %>% top_n(1, date),
-  # bg.color = "white", size=2.2) +
-  # geom_text_repel(data = . %>% group_by(Admin2)
-  geom_label_repel(data = . %>% group_by(Admin2)
-                   %>% top_n(1, date),
-                   aes(label = paste0("", Admin2), colour=Admin2),
-                   size=1.5,
-                   # direction = "x",
-                   nudge_x = 10,
-                   hjust = 0,
-                   force = 2.0, 
-                   xlim = c(x_max, x_max_pad),
-                   # show.legend = FALSE,
-                   segment.color = 'black',
-                   segment.alpha = .3,
-                   label.padding = 0.1,
-                   max.iter=6000,
-                   seed = 123) +
-  # formatting
-  scale_x_date(expand = expansion(add = c(0, 1)),
-               date_breaks = "10 day", date_labels = "%m/%d",
-               limits=c(x_min, x_max_pad)) + 
-  scale_y_log10(expand = expansion(add = c(0, 0.1)),
-                minor_breaks=log10_minor_break(),
-                breaks = y_breaks, labels = y_breaks,
-                limits=y_limits) +
-  coord_cartesian(clip = "off") +
-  theme(axis.text.x=element_text(angle=-45, hjust=1, size=x_ax_sz))  +
-  theme(legend.position = "none",
-        plot.margin = margin(3,15,3,3,"mm")) + 
-  labs(x = "Date", y = "", subtitle = plot_title)
-if(SAVE_PLOTS) dev.off()
-
-# Map Data ----------------------------------------------------------------
-date_max <- max(new_ca_df$date)
-ca_recent_df <- new_ca_df %>% 
-  filter(date == date_max)
-ca_recent_tab <- tibble(ca_recent_df)
-ca_recent_tab$FIPS <- as.character(ca_recent_tab$FIPS)
-ca_recent_tab$FIPS <- paste0('0',ca_recent_tab$FIPS)
-ca_counties <- counties %>% filter(state_abbv == 'CA')
-# counties <- urbnmapr::counties %>%
-#   rename(FIPS = county_fips)
-# counties
-# legend
-
-ca_case_breaks <- round(quantile(ca_recent_tab$cases, probs = seq(0, 1, by= 0.1)))
-
-time_str <- gsub(':', '_', gsub(' ', '+', Sys.time()))
-ca_counties_map_fname <- paste0(c(time_str,'_corona_CA_Counties_Cases_map',  '.png'), collapse = '')
-plot_title <-  paste0(c("Cumulative Number of Covid-19 Cases by CA County (as of ", 
-                        as.character(curr_date),")"), collapse='')
-
-if(SAVE_PLOTS) {
-  png(paste0('images/', ca_counties_map_fname),
-      width=7, height=5, units='in', res=PNG_RES)
-}
-ca_recent_tab %>% 
-  left_join(ca_counties, by = "FIPS") %>% 
-  ggplot(mapping = aes(long, lat, group = group, fill = cases)) +
-  geom_polygon(color = "#ffffff", size = .25) +
-  # scale_fill_gradient(
-  scale_fill_gradientn(
-    colors=rev(brewer.pal(n=11, name='RdYlBu')),
-    breaks=as.vector(ca_case_breaks),
-    label=scales::comma,
-    #guide = guide_colorbar(title.position = "top")
-    # oob=scales::squish
-    trans = "log"
-  ) +
-  coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
-  theme(# legend.key.size = 5
-    legend.key.height = unit(.65, "in"),
-    legend.key.width = unit(.4, "in"), 
-    legend.text = element_text(size = 9, angle=0),
-    legend.title = element_text(vjust = 4)
-    # legend.title.align=1
-  ) +
-  labs(fill = "Number of Cases", x = "", y = "", subtitle = plot_title)
-if(SAVE_PLOTS) dev.off()
-
-
-# CA New Covid-19 Cases by Coumty --------------------------------------------------
-ca_counties_new_cases_df <- filtered_ca_df %>%
-  arrange(Admin2, date) %>%
-  group_by(Admin2) %>%
-  mutate(new_cases=c(NA, diff(cases))) %>%
-  select(c('Admin2', 'FIPS', 'date','new_cases')) %>%
-  mutate(FIPS=as.character(FIPS)) %>% 
-  filter(!is.na(new_cases))
-ca_counties_new_cases_df[ca_counties_new_cases_df$new_cases < 0, 'new_cases'] <- 0
-# dim(ca_counties_new_cases_df)
-# head(ca_counties_new_cases_df)
-# summary(ca_counties_new_cases_df)
-
-# Moving Average to denoise data
-ma_ks = c(1, 7, 14)
-for (k in ma_ks){
-  print(k)
-  # k=14
-  NA_vec <- rep(NA, k-1)
-  ca_county_means_df <- ca_counties_new_cases_df %>%
-    group_by(Admin2) %>%
-    mutate(ma_cases=c(NA_vec, rollmean(new_cases, k=k, align='right'))) %>%
-    filter(!is.na(ma_cases))
-  
-  # x_ax_sz <- 6
-  # a_df <- ny_county_means_df
-  x_max <- max(ca_county_means_df$date)
-  x_min <- min(ca_county_means_df$date)
-  x_max_pad <- x_max + 56
-  # x_minor <-seq(0, x_max_pad+1, x_minor_spacing)
-  
-  y_max <- max(ca_county_means_df$ma_cases)
-  y_break_max <- 10^(ceiling(log10(y_max)))
-  y_break_max_power <- log10(y_break_max)
-  y_breaks <- c(as.vector(c(1, 2, 5) %o% 10^(0:y_break_max_power)))
-  y_limits = c(1, y_max * 1.3)
-  
-  plot_title <-  paste(c(k, 
-                         '-day Moving Average of New Covid-19 Cases by CA County [Log Scale] - ',
-                         as.character(curr_date)), collapse='')
-  
-  time_str <- gsub(':', '_', gsub(' ', '+', Sys.time()))
-  ca_counties_new_fname <- paste0(c(time_str,
-                                    '_corona_CA_Counties_New_Cases_',
-                                    'MA', k,
-                                    '.png'), collapse = '')
-  
-  if(SAVE_PLOTS) {
-    png(paste0('images/', ca_counties_new_fname),
-        width=7, height=5, units='in', res=PNG_RES)
-  }
-  gplot <- ggplot(ca_county_means_df, 
-                  aes(x=date, y=ma_cases, color=Admin2)) +
-    geom_line(size = 0.5, alpha=0.8) +
-    geom_label_repel(data = . %>% group_by(Admin2)
-                     %>% top_n(1, date),
-                     aes(label = paste0("", Admin2), colour=Admin2),
-                     size=1.5,
-                     # direction = "x",
-                     nudge_x = 10,
-                     hjust = 0,
-                     force = 1.5, 
-                     xlim = c(x_max, x_max_pad),
-                     # show.legend = FALSE,
-                     segment.color = 'black',
-                     segment.alpha = .3,
-                     label.padding = 0.1,
-                     max.iter=6000,
-                     seed = 123) +
-    # formatting
-    scale_x_date(expand = expansion(add = c(0, 1)),
-                 date_breaks = "10 day", date_labels = "%m/%d",
-                 limits=c(x_min, x_max_pad)) + 
-    scale_y_log10(expand = expansion(add = c(0, 0.1)),
-                  minor_breaks=log10_minor_break(),
-                  breaks = y_breaks, labels = y_breaks,
-                  limits=y_limits) +
-    coord_cartesian(clip = "off") +
-    theme(axis.text.x=element_text(angle=-45, hjust=1, size=x_ax_sz))  +
-    theme(legend.position = "none",
-          plot.margin = margin(3,15,3,3,"mm")) + 
-    labs(x = "Date", y = "", subtitle = plot_title)
-  print(gplot)
-  if(SAVE_PLOTS) dev.off()
-}
-
-# CA New Cases Map -----------------------------------------------------------
-max_date <- max(ca_counties_new_cases_df$date)
-max_new_ca_df <- ca_counties_new_cases_df %>%
-  filter(date==max_date)
-max_new_ca_df$FIPS <- paste0('0', max_new_ca_df$FIPS)
-ca_new_case_breaks <- round(quantile(max_new_ca_df$new_cases, 
-                                     probs = seq(0, 1, by= 0.1)))
-
-time_str <- gsub(':', '_', gsub(' ', '+', Sys.time()))
-ca_cty_new_map_fname <- paste0(c(time_str,
-                                 '_corona_CA_Counties_New_Cases_map',
-                                 '.png'), collapse = '')
-plot_title <-  paste0(c("Number of New Covid-19 Cases by CA County (as of ", 
-                        as.character(curr_date),")"), collapse='')
-
-if(SAVE_PLOTS) {
-  png(paste0('images/', ca_cty_new_map_fname),
-      width=7, height=5, units='in', res=PNG_RES)
-}
-max_new_ca_df %>% 
-  left_join(ca_counties, by = "FIPS") %>% 
-  ggplot(mapping = aes(long, lat, group = group, fill = new_cases)) +
-  geom_polygon(color = "#ffffff", size = .25) +
-  coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
-  # scale_fill_gradient(
-  scale_fill_gradientn(
-    colors=rev(brewer.pal(n=11, name='RdYlBu')),
-    breaks=as.vector(ca_new_case_breaks),
-    label=scales::comma,
-    #guide = guide_colorbar(title.position = "top")
-    # oob=scales::squish
-    # trans = "log"
-    trans="pseudo_log"
-  ) +
-  theme(# legend.key.size = 5
-    legend.key.height = unit(.65, "in"),
-    legend.key.width = unit(.4, "in"), 
-    legend.text = element_text(size = 9, angle=0),
-    legend.title = element_text(vjust = 4)
-    # legend.title.align=1
-  ) +
-  labs(fill = "Number of Cases", x = "", y = "", subtitle = plot_title)
-if(SAVE_PLOTS) dev.off()
-
-
+# 
+# # California County -------------------------------------------------------
+# fname_cag <- paste(c('data/ca_gov_state_cases_', curr_time_str, '.csv'), collapse='')
+# fname_cag
+# # 
+# # # https://data.ca.gov/dataset/covid-19-cases/resource/926fd08f-cc91-4828-af38-bd45de97f8c3
+# if(!file.exists(fname_cag)) {
+#   ca_gov_cases_url <- 'https://data.ca.gov/dataset/590188d5-8545-4c93-a9a0-e230f0db7290/resource/926fd08f-cc91-4828-af38-bd45de97f8c3/download/statewide_cases.csv'
+#   download.file(url = ca_gov_cases_url, destfile = fname_cag)
+# }
+# 
+# 
+# ca_gov_df <- read.csv(fname_cag)
+# ca_gov_df <- ca_gov_df %>%
+#   arrange(county, date)
+# ca_gov_df$date <- as.Date(ca_gov_df$date)
+# 
+# filtered_ca_df <- ca_gov_df %>%
+#   filter(!(county %in% c('Out Of Country', 'Unassigned')))
+# 
+# x_max <- max(filtered_ca_df$date)
+# x_min <- min(filtered_ca_df$date)
+# x_max_pad <- x_max + 70
+# 
+# y_max <- max(filtered_ca_df$totalcountconfirmed, na.rm = TRUE)
+# y_break_max <- 10^(ceiling(log10(y_max)))
+# y_break_max_power <- log10(y_break_max)
+# y_breaks <- c(as.vector(c(1, 2, 5) %o% 10^(0:y_break_max_power)))
+# y_limits = c(1, y_max * 1.4)
+# 
+# plot_title <-  paste("Cumulative Number of Cases by CA County [Log Scale]",
+#                      curr_date, sep= ' - ')
+# time_str <- gsub(':', '_', gsub(' ', '+', Sys.time()))
+# ca_counties_fname <- paste0(c(time_str,'_corona_CA_Counties_Cases',  '.png'), collapse = '')
+# 
+# 
+# 
+# if(SAVE_PLOTS) {
+#   png(paste0('images/', ca_counties_fname),
+#       width=7, height=5, units='in', res=PNG_RES)
+# }
+# ggplot(filtered_ca_df, aes(x=date, y=totalcountconfirmed, color=county)) +
+#   geom_line(size = 0.8) +
+#   geom_label_repel(data = . %>% group_by(county)
+#                    %>% top_n(1, date),
+#                    aes(label = paste0("", county), colour=county),
+#                    size=1.5,
+#                    # direction = "x",
+#                    nudge_x = 10,
+#                    hjust = 0,
+#                    force = 2.0, 
+#                    xlim = c(x_max, x_max_pad),
+#                    # show.legend = FALSE,
+#                    segment.color = 'black',
+#                    segment.alpha = .3,
+#                    label.padding = 0.1,
+#                    max.iter=6000,
+#                    seed = 123) +
+#   # formatting
+#   scale_x_date(expand = expansion(add = c(0, 1)),
+#                date_breaks = "14 day", date_labels = "%m/%d",
+#                limits=c(x_min, x_max_pad)) + 
+#   scale_y_log10(expand = expansion(add = c(0, 0.1)),
+#                 minor_breaks=log10_minor_break(),
+#                 breaks = y_breaks, labels = y_breaks,
+#                 limits=y_limits) +
+#   coord_cartesian(clip = "off") +
+#   theme(axis.text.x=element_text(angle=-45, hjust=1, size=x_ax_sz))  +
+#   theme(legend.position = "none",
+#         plot.margin = margin(3,15,3,3,"mm")) + 
+#   labs(x = "Date", y = "", subtitle = plot_title)
+# if(SAVE_PLOTS) dev.off()
+# 
+# 
+# # Map Data ----------------------------------------------------------------
+# date_max <- max(filtered_ca_df$date)
+# ca_recent_df <- filtered_ca_df %>% 
+#   filter(date == date_max)
+# ca_recent_tab <- tibble(ca_recent_df)
+# ca_recent_tab$county_name <- paste(ca_recent_tab$county, 'County')
+# ca_counties <- counties %>% filter(state_abbv == 'CA')
+# 
+# # a <- paste(ca_recent_tab$county, 'County')
+# # b <- unique(ca_counties$county_name)
+# # length(a)
+# # length(b)
+# # length(intersect(a,b))
+# 
+# ca_case_breaks <- round(quantile(ca_recent_tab$totalcountconfirmed, probs = seq(0, 1, by= 0.1)))
+# 
+# time_str <- gsub(':', '_', gsub(' ', '+', Sys.time()))
+# ca_counties_map_fname <- paste0(c(time_str,'_corona_CA_Counties_Cases_map',  '.png'), collapse = '')
+# plot_title <-  paste0(c("Cumulative Number of Covid-19 Cases by CA County (as of ", 
+#                         as.character(curr_date),")"), collapse='')
+# 
+# if(SAVE_PLOTS) {
+#   png(paste0('images/', ca_counties_map_fname),
+#       width=7, height=5, units='in', res=PNG_RES)
+# }
+# ca_recent_tab %>% 
+#   left_join(ca_counties, by = "county_name") %>% 
+#   ggplot(mapping = aes(long, lat, group = group, fill = totalcountconfirmed)) +
+#   geom_polygon(color = "#ffffff", size = .25) +
+#   # scale_fill_gradient(
+#   scale_fill_gradientn(
+#     colors=rev(brewer.pal(n=11, name='RdYlBu')),
+#     breaks=as.vector(ca_case_breaks),
+#     label=scales::comma,
+#     #guide = guide_colorbar(title.position = "top")
+#     # oob=scales::squish
+#     trans = "log"
+#   ) +
+#   coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+#   theme(# legend.key.size = 5
+#     legend.key.height = unit(.65, "in"),
+#     legend.key.width = unit(.4, "in"), 
+#     legend.text = element_text(size = 9, angle=0),
+#     legend.title = element_text(vjust = 4)
+#     # legend.title.align=1
+#   ) +
+#   labs(fill = "Number of Cases", x = "", y = "", subtitle = plot_title)
+# if(SAVE_PLOTS) dev.off()
+# 
+# 
+# # CA New Covid-19 Cases by Coumty --------------------------------------------------
+# filtered_ca_df[filtered_ca_df$newcountconfirmed < 0, 'newcountconfirmed'] <- 0
+# 
+# # Moving Average to denoise data
+# ma_ks = c(1, 7, 14)
+# for (k in ma_ks){
+#   print(k)
+#   NA_vec <- rep(NA, k-1)
+#   ca_county_means_df <- filtered_ca_df %>%
+#     group_by(county) %>%
+#     mutate(ma_cases=c(NA_vec, rollmean(newcountconfirmed, k=k, align='right'))) %>%
+#     filter(!is.na(ma_cases))
+#   
+#   # x_ax_sz <- 6
+#   # a_df <- ny_county_means_df
+#   x_max <- max(ca_county_means_df$date)
+#   x_min <- min(ca_county_means_df$date)
+#   x_max_pad <- x_max + 56
+#   # x_minor <-seq(0, x_max_pad+1, x_minor_spacing)
+#   
+#   y_max <- max(ca_county_means_df$ma_cases)
+#   y_break_max <- 10^(ceiling(log10(y_max)))
+#   y_break_max_power <- log10(y_break_max)
+#   y_breaks <- c(as.vector(c(1, 2, 5) %o% 10^(-1:y_break_max_power)))
+#   y_limits = c(0.1, y_max * 1.3)
+#   
+#   plot_title <-  paste(c(k, 
+#                          '-day Moving Average of New Covid-19 Cases by CA County [Log Scale] - ',
+#                          as.character(curr_date)), collapse='')
+#   
+#   time_str <- gsub(':', '_', gsub(' ', '+', Sys.time()))
+#   ca_counties_new_fname <- paste0(c(time_str,
+#                                     '_corona_CA_Counties_New_Cases_',
+#                                     'MA', k,
+#                                     '.png'), collapse = '')
+#   
+#   if(SAVE_PLOTS) {
+#     png(paste0('images/', ca_counties_new_fname),
+#         width=7, height=5, units='in', res=PNG_RES)
+#   }
+#   gplot <- ggplot(ca_county_means_df, 
+#                   aes(x=date, y=ma_cases, color=county)) +
+#     geom_line(size = 0.5, alpha=0.8) +
+#     geom_label_repel(data = . %>% group_by(county)
+#                      %>% top_n(1, date),
+#                      aes(label = paste0("", county), colour=county),
+#                      size=1.5,
+#                      # direction = "x",
+#                      nudge_x = 10,
+#                      hjust = 0,
+#                      force = 1.5, 
+#                      xlim = c(x_max, x_max_pad),
+#                      # show.legend = FALSE,
+#                      segment.color = 'black',
+#                      segment.alpha = .3,
+#                      label.padding = 0.1,
+#                      max.iter=6000,
+#                      seed = 123) +
+#     # formatting
+#     scale_x_date(expand = expansion(add = c(0, 1)),
+#                  date_breaks = "10 day", date_labels = "%m/%d",
+#                  limits=c(x_min, x_max_pad)) + 
+#     scale_y_log10(expand = expansion(add = c(0, 0.1)),
+#                   minor_breaks=log10_minor_break(),
+#                   breaks = y_breaks, labels = y_breaks,
+#                   limits=y_limits) +
+#     coord_cartesian(clip = "off") +
+#     theme(axis.text.x=element_text(angle=-45, hjust=1, size=x_ax_sz))  +
+#     theme(legend.position = "none",
+#           plot.margin = margin(3,15,3,3,"mm")) + 
+#     labs(x = "Date", y = "", subtitle = plot_title)
+#   print(gplot)
+#   if(SAVE_PLOTS) dev.off()
+# }
+# 
+# # CA New Cases Map -----------------------------------------------------------
+# max_date <- max(filtered_ca_df$date)
+# max_new_ca_df <- filtered_ca_df %>%
+#   filter(date==max_date)
+# max_new_ca_df <- tibble(max_new_ca_df)
+# max_new_ca_df$county_name <- paste(max_new_ca_df$county, 'County')
+# ca_new_case_breaks <- round(quantile(max_new_ca_df$newcountconfirmed, 
+#                                      probs = seq(0, 1, by= 0.1)))
+# 
+# time_str <- gsub(':', '_', gsub(' ', '+', Sys.time()))
+# ca_cty_new_map_fname <- paste0(c(time_str,
+#                                  '_corona_CA_Counties_New_Cases_map',
+#                                  '.png'), collapse = '')
+# plot_title <-  paste0(c("Number of New Covid-19 Cases by CA County (as of ", 
+#                         as.character(curr_date),")"), collapse='')
+# 
+# if(SAVE_PLOTS) {
+#   png(paste0('images/', ca_cty_new_map_fname),
+#       width=7, height=5, units='in', res=PNG_RES)
+# }
+# max_new_ca_df %>% 
+#   left_join(ca_counties, by = "county_name") %>% 
+#   ggplot(mapping = aes(long, lat, group = group, fill = newcountconfirmed)) +
+#   geom_polygon(color = "#ffffff", size = .25) +
+#   coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+#   # scale_fill_gradient(
+#   scale_fill_gradientn(
+#     colors=rev(brewer.pal(n=11, name='RdYlBu')),
+#     breaks=as.vector(ca_new_case_breaks),
+#     label=scales::comma,
+#     #guide = guide_colorbar(title.position = "top")
+#     # oob=scales::squish
+#     # trans = "log"
+#     trans="pseudo_log"
+#   ) +
+#   theme(# legend.key.size = 5
+#     legend.key.height = unit(.65, "in"),
+#     legend.key.width = unit(.4, "in"), 
+#     legend.text = element_text(size = 9, angle=0),
+#     legend.title = element_text(vjust = 4)
+#     # legend.title.align=1
+#   ) +
+#   labs(fill = "Number of Cases", x = "", y = "", subtitle = plot_title)
+# if(SAVE_PLOTS) dev.off()
