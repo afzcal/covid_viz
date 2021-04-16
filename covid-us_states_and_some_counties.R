@@ -47,6 +47,14 @@ curr_time_str <- gsub(' ','-', gsub('-|:','_', curr_time))
 fname_nyt <- paste0(paste('data/corona_nyt', curr_time_str, sep='-'), '.csv')
 fname_nyt
 
+if(!dir.exists('data/')) {
+  dir.create('data/')
+}
+
+if(!dir.exists('images/')) {
+  dir.create('images/')
+}
+
 # https://github.com/nytimes/covid-19-data
 if(!file.exists(fname_nyt)) {
   nyt_us_states_url <- 'https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv'
